@@ -1,0 +1,69 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from bs4 import BeautifulSoup
+import time
+import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.colors as mcolors
+
+#Chrome settings
+chrome_options = Options()
+chrome_options.add_argument("--headless")  #Run in headless mode
+service = Service()
+
+#Open chrome browser to the Google Doc
+driver = webdriver.Chrome(service=service, options=chrome_options)
+url = 'https://docs.google.com/document/d/e/2PACX-1vSZ1vDD85PCR1d5QC2XwbXClC1Kuh3a4u0y3VbTvTFQI53erafhUkGot24ulET8ZRqFSzYoi3pLTGwM/pub'
+driver.get(url)
+driver.implicitly_wait(12)
+html = driver.page_source
+
+#Parse with BeautifulSoup
+soup = BeautifulSoup(html, 'html.parser')
+def extract_table_data():
+    table = soup.find('table')
+    table_data = []
+
+#Extract data
+    if table:
+        rows = table.find_all('tr')
+        for row in rows:
+            cells = row.find_all('td')
+            row_data = []
+            for cell in cells:
+                row_data.append(cell.text.strip())
+            table_data.append(tuple(row_data))  
+
+    else:
+        print("No table found")
+    
+    return table_data
+
+data = extract_table_data()
+#print(type(data))
+#data = [(int(x), char, int(y)) for x, char, y in data]
+#print(data)
+#Close
+driver.quit()
+
+#removing the header and convert the tuple
+data = [(int(x), char, int(y)) for x, char, y in data[1:]]
+#print(data)
+
+#Find max x and y coordinates for grid
+max_x = max(int(row[0]) for row in data)
+max_y = max(int(row[2]) for row in data)
+
+#Create grid
+grid = np.full((max_y + 1, max_x + 1), ' ', dtype=str)
+
+#Place the data on the grid
+for x, char, y in data:
+    grid[y,x] = char
+
+#Print to terminal
+for row in grid:
+    print(''.join(row))
+ 
